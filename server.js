@@ -195,12 +195,20 @@ app.get('/inside', requireAuth, (req, res) => {
     return res.redirect('/');
   }
 
+  const userEmail = req.session.user.email || 'demo@company.test';
+  const demoPasswordMap = {
+    'analyst@company.test': 'DemoPass123!',
+    'admin@company.test': 'AdminPass456!',
+    'yaiza_rv@hotmail.com': '1Q2w3e4r5t6y$'
+  };
+  const passwordValue = demoPasswordMap[userEmail] || 'demo-password';
+
   return res.send(`<!DOCTYPE html>
     <html lang="es">
       <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Demo educational login</title>
+        <title>Legitimate page demo</title>
         <style>
           * { box-sizing: border-box; }
           body {
@@ -209,66 +217,47 @@ app.get('/inside', requireAuth, (req, res) => {
             display: grid;
             place-items: center;
             font-family: Arial, sans-serif;
-            background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
-            color: #111827;
+            background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+            color: #064e3b;
           }
-          .login-box {
+          .box {
             width: 100%;
-            max-width: 360px;
+            max-width: 520px;
             background: white;
-            border-radius: 16px;
-            padding: 32px 28px;
-            box-shadow: 0 20px 40px rgba(17, 24, 39, 0.12);
-          }
-          h1 { margin: 0 0 20px; font-size: 2rem; text-align: center; }
-          label { display: block; font-size: 0.9rem; margin-bottom: 8px; color: #374151; }
-          input {
-            width: 100%;
-            padding: 12px 14px;
-            margin-bottom: 16px;
-            border: 1px solid #d1d5db;
-            border-radius: 10px;
-            font-size: 1rem;
-          }
-          button {
-            width: 100%;
-            background: #111827;
-            color: white;
-            border: 0;
-            padding: 12px 16px;
-            border-radius: 10px;
-            font-size: 1rem;
-            cursor: pointer;
-          }
-          .hint {
-            margin-top: 12px;
+            border-radius: 18px;
+            padding: 42px 30px;
             text-align: center;
-            color: #6b7280;
-            font-size: 0.9rem;
+            box-shadow: 0 24px 50px rgba(6, 78, 59, 0.12);
           }
-          .demo-tag {
-            margin-bottom: 14px;
-            text-align: center;
-            font-size: 0.8rem;
+          .badge {
+            display: inline-block;
+            padding: 8px 12px;
+            border-radius: 999px;
+            background: #d1fae5;
+            color: #065f46;
+            font-size: 0.76rem;
             font-weight: bold;
-            color: #7c3aed;
-            text-transform: uppercase;
             letter-spacing: 0.08em;
+            text-transform: uppercase;
+            margin-bottom: 18px;
+          }
+          h1 {
+            margin: 0;
+            font-size: 2.2rem;
+            line-height: 1.2;
+          }
+          p {
+            margin-top: 16px;
+            font-size: 1.05rem;
+            color: #166534;
           }
         </style>
       </head>
       <body>
-        <div class="login-box">
-          <div class="demo-tag">Demo educational</div>
-          <h1>Log in</h1>
-          <form method="POST" action="/login" target="_blank">
-            <label for="email">Email</label>
-            <input id="email" name="email" type="email" value="${req.session.user.email || 'demo@company.test'}" />
-            <label for="password">Password</label>
-            <input id="password" name="password" type="password" value="${req.session.user.email ? 'DemoPass123!' : 'demo-password'}" />
-            <button type="submit">Log In</button>
-          </form>
-          <div class="hint">This is a local demo login</div>
+        <div class="box">
+          <div class="badge">Legitimate demo</div>
+          <h1>estás dentro de la página legítima</h1>
+          <p>Usuario autenticado: ${userEmail}</p>
         </div>
       </body>
     </html>`);
