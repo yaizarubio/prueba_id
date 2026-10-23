@@ -37,7 +37,22 @@
             </ul>
           </div>
         </div>
+
+        <div class="panel session-panel">
+          <h2>Current session cookie</h2>
+          <p class="cookie-label">connect.sid</p>
+          <code id="sessionCookieValue">Loading...</code>
+        </div>
       </div>
     </div>
+
+    <script>
+      const cookieValue = document.cookie
+        .split('; ')
+        .find((row) => row.startsWith('connect.sid='));
+
+      const cookieElement = document.getElementById('sessionCookieValue');
+      cookieElement.textContent = cookieValue ? cookieValue.split('=')[1] : 'No session cookie found';
+    </script>
   </body>
 </html>

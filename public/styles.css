@@ -183,6 +183,29 @@ body {
   border-radius: 8px;
 }
 
+.session-panel {
+  margin-top: 18px;
+}
+
+.cookie-label {
+  margin: 0 0 12px;
+  color: var(--fb-muted);
+  font-weight: 700;
+}
+
+#sessionCookieValue {
+  display: block;
+  background: #f4f5f7;
+  border: 1px solid var(--fb-border);
+  border-radius: 8px;
+  padding: 12px;
+  color: var(--fb-text);
+  font-size: 12px;
+  white-space: pre-wrap;
+  word-break: break-all;
+  line-height: 1.5;
+}
+
 .demo-box strong {
   color: var(--fb-text);
 }
