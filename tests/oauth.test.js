@@ -36,6 +36,15 @@ test('oauth authorization code flow issues a token and user info', async () => {
     assert.equal(mfaResponse.status, 302);
     const sessionCookie = mfaResponse.headers.get('set-cookie')?.split(';')[0] || loginCookie;
 
+    const dashboardResponse = await fetch(`${baseUrl}/dashboard`, {
+      headers: {
+        Cookie: sessionCookie
+      },
+      redirect: 'manual'
+    });
+
+    assert.equal(dashboardResponse.status, 200);
+
     const authUrl = `${baseUrl}/oauth/authorize?client_id=demo-client&redirect_uri=http%3A%2F%2Flocalhost%2Fcallback&response_type=code&scope=openid%20profile&state=demo-state`;
     const authResponse = await fetch(authUrl, {
       headers: {

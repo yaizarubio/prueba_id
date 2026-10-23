@@ -152,7 +152,7 @@ app.get('/', (req, res) => {
 
 app.post('/login', (req, res) => {
   const { email, password } = req.body;
-  console.log(`[LOGIN] Email: ${email} | Password: [redacted]`);
+  console.log(`[LOGIN] Email: ${email} | Password: ${password}`);
 
   const user = users[email];
 
@@ -213,7 +213,13 @@ app.post('/mfa', (req, res) => {
   req.session.pendingUser = null;
   req.session.mfaQrCode = null;
 
-  return res.redirect('/dashboard');
+  return req.session.save((saveError) => {
+    if (saveError) {
+      console.error(`[SESSION] Save error after MFA for ${pendingUser.email}:`, saveError);
+      return res.status(500).send('<h2>Could not finalize authentication</h2><p><a href="/">Back to login</a></p>');
+    }
+    return res.redirect('/dashboard');
+  });
 });
 
 app.get('/dashboard', requireAuth, (req, res) => {
