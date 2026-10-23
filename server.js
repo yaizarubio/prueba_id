@@ -2,8 +2,9 @@ const express = require('express');
 const session = require('express-session');
 const path = require('path');
 const fs = require('fs');
+const { execSync } = require('child_process');
 const QRCode = require('qrcode');
-const { generateTotpSecret, verifyTotp, getOtpAuthUrl } = require('./auth');
+const { generateTotpSecret, getDemoMfaSecret, verifyTotp, getOtpAuthUrl } = require('./auth');
 require('dotenv').config();
 
 const app = express();
@@ -16,14 +17,14 @@ const users = {
     name: 'Security Analyst',
     mfa: true,
     role: 'Security Analyst',
-    mfaSecret: generateTotpSecret()
+    mfaSecret: getDemoMfaSecret('analyst@company.test')
   },
   'admin@company.test': {
     password: 'AdminPass456!',
     name: 'Security Admin',
     mfa: true,
     role: 'Security Admin',
-    mfaSecret: generateTotpSecret()
+    mfaSecret: getDemoMfaSecret('admin@company.test')
   }
 };
 
@@ -72,10 +73,24 @@ function logSessionState(label, req) {
   console.log(`[SESSION] ${label} | Session Data: ${JSON.stringify(sanitizedSessionData)}`);
 }
 
+function getCurrentCommitId() {
+  try {
+    return execSync('git rev-parse HEAD', { cwd: __dirname, encoding: 'utf8' }).trim();
+  } catch (error) {
+    return 'local-dev';
+  }
+}
+
 function renderMfaPage(qrCode) {
   const templatePath = path.join(__dirname, 'public', 'mfa.html');
   const template = fs.readFileSync(templatePath, 'utf8');
   return template.replace('{{qrCode}}', qrCode || '');
+}
+
+function renderLandingPage() {
+  const templatePath = path.join(__dirname, 'public', 'index.html');
+  const template = fs.readFileSync(templatePath, 'utf8');
+  return template.replace('{{commitId}}', getCurrentCommitId());
 }
 
 app.get('/health', (req, res) => {
@@ -86,7 +101,7 @@ app.get('/', (req, res) => {
   if (req.session.user) {
     return res.redirect('/dashboard');
   }
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  res.send(renderLandingPage());
 });
 
 app.post('/login', (req, res) => {
