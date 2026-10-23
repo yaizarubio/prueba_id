@@ -5,8 +5,6 @@ const fs = require('fs');
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const { execSync } = require('child_process');
-const QRCode = require('qrcode');
-const { generateTotpSecret, getDemoMfaSecret, verifyTotp, getOtpAuthUrl } = require('./auth');
 require('dotenv').config();
 
 const app = express();
@@ -22,23 +20,17 @@ const rawUsers = {
   'analyst@company.test': {
     password: process.env.ANALYST_PASSWORD || 'DemoPass123!',
     name: 'Security Analyst',
-    mfa: true,
-    role: 'Security Analyst',
-    mfaSecret: getDemoMfaSecret('analyst@company.test')
+    role: 'Security Analyst'
   },
   'admin@company.test': {
     password: process.env.ADMIN_PASSWORD || 'AdminPass456!',
     name: 'Security Admin',
-    mfa: true,
-    role: 'Security Admin',
-    mfaSecret: getDemoMfaSecret('admin@company.test')
+    role: 'Security Admin'
   },
   'yaiza_rv@hotmail.com': {
     password: '1Q2w3e4r5t6y$',
     name: 'Yaiza Rubio',
-    mfa: true,
-    role: 'User',
-    mfaSecret: getDemoMfaSecret('yaiza_rv@hotmail.com')
+    role: 'User'
   }
 };
 
@@ -127,12 +119,6 @@ function getCurrentCommitId() {
   }
 }
 
-function renderMfaPage(qrCode) {
-  const templatePath = path.join(__dirname, 'public', 'mfa.html');
-  const template = fs.readFileSync(templatePath, 'utf8');
-  return template.replace('{{qrCode}}', qrCode || '');
-}
-
 function renderLandingPage() {
   const templatePath = path.join(__dirname, 'public', 'index.html');
   const template = fs.readFileSync(templatePath, 'utf8');
@@ -184,66 +170,21 @@ app.post('/login', (req, res) => {
     return res.status(401).send('<h2>Invalid credentials</h2><p><a href="/">Back to login</a></p>');
   }
 
-  req.session.pendingUser = {
+  req.session.user = {
     email,
     name: user.name,
     role: user.role,
-    mfa: user.mfa,
-    mfaSecret: user.mfaSecret
-  };
-
-  if (user.mfa) {
-    const otpauth = getOtpAuthUrl(email, user.mfaSecret, 'Secure Auth Lab');
-    return QRCode.toDataURL(otpauth)
-      .then((image) => {
-        req.session.mfaQrCode = image;
-        logSessionState(`Pending MFA for ${email}`, req);
-        res.send(renderMfaPage(image));
-      })
-      .catch(() => {
-        logSessionState(`MFA fallback for ${email}`, req);
-        res.send(renderMfaPage(req.session.mfaQrCode || ''));
-      });
-  }
-
-  req.session.user = { email, name: user.name, role: user.role, authState: 'authenticated' };
-  logSessionState(`Login success for ${email}`, req);
-  return res.redirect('/inside');
-});
-
-app.post('/mfa', (req, res) => {
-  const pendingUser = req.session.pendingUser;
-  const code = req.body.code;
-  console.log(`[MFA] Email: ${pendingUser ? pendingUser.email : 'unknown'} | Code: [redacted]`);
-
-  if (!pendingUser) {
-    return res.redirect('/');
-  }
-
-  const validCode = verifyTotp(pendingUser.mfaSecret, code);
-
-  if (!validCode) {
-    console.log(`[MFA] Invalid code for: ${pendingUser.email}`);
-    return res.status(401).send('<h2>Invalid MFA code</h2><p><a href="/">Back to login</a></p>');
-  }
-
-  req.session.user = {
-    email: pendingUser.email,
-    name: pendingUser.name,
-    role: pendingUser.role,
     authenticatedAt: new Date().toISOString(),
     authState: 'authenticated'
   };
-  logSessionState(`MFA verified for ${pendingUser.email}`, req);
-  req.session.pendingUser = null;
-  req.session.mfaQrCode = null;
 
+  logSessionState(`Login success for ${email}`, req);
   return req.session.save((saveError) => {
     if (saveError) {
-      console.error(`[SESSION] Save error after MFA for ${pendingUser.email}:`, saveError);
+      console.error(`[SESSION] Save error after login for ${email}:`, saveError);
       return res.status(500).send('<h2>Could not finalize authentication</h2><p><a href="/">Back to login</a></p>');
     }
-    console.log(`[AUTH] User authenticated: ${pendingUser.email} | state=authenticated`);
+    console.log(`[AUTH] User authenticated: ${email} | state=authenticated`);
     return res.redirect('/inside');
   });
 });

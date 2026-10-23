@@ -1,41 +1,25 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { generateSync } = require('otplib');
 const { app } = require('../server');
-const { getDemoMfaSecret } = require('../auth');
 
-test('oauth authorization code flow issues a token and user info', async () => {
+test('oauth authorization code flow issues a token and user info after direct login', async () => {
   const server = app.listen(0);
   await new Promise((resolve) => server.once('listening', resolve));
   const port = server.address().port;
   const baseUrl = `http://127.0.0.1:${port}`;
 
   try {
-    const code = generateSync({ secret: getDemoMfaSecret('analyst@company.test') });
-
     const loginResponse = await fetch(`${baseUrl}/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: 'email=analyst%40company.test&password=DemoPass123!'
-    });
-
-    assert.equal(loginResponse.status, 200);
-    const loginCookie = loginResponse.headers.get('set-cookie')?.split(';')[0];
-    assert.ok(loginCookie, 'Expected a session cookie after login');
-
-    const mfaResponse = await fetch(`${baseUrl}/mfa`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        Cookie: loginCookie
-      },
-      body: `code=${code}`,
+      body: 'email=analyst%40company.test&password=DemoPass123!',
       redirect: 'manual'
     });
 
-    assert.equal(mfaResponse.status, 302);
-    assert.equal(mfaResponse.headers.get('location'), '/inside');
-    const sessionCookie = mfaResponse.headers.get('set-cookie')?.split(';')[0] || loginCookie;
+    assert.equal(loginResponse.status, 302);
+    assert.equal(loginResponse.headers.get('location'), '/inside');
+    const sessionCookie = loginResponse.headers.get('set-cookie')?.split(';')[0];
+    assert.ok(sessionCookie, 'Expected a session cookie after login');
 
     const dashboardResponse = await fetch(`${baseUrl}/dashboard`, {
       headers: {
