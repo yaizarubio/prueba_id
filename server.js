@@ -50,6 +50,22 @@ function requireAuth(req, res, next) {
   next();
 }
 
+function logSessionState(label, req) {
+  const cookieHeader = req.headers.cookie || 'none';
+  const sessionData = req.session ? { ...req.session } : {};
+
+  if (sessionData.cookie) {
+    delete sessionData.cookie;
+  }
+
+  if (sessionData.id) {
+    delete sessionData.id;
+  }
+
+  console.log(`[SESSION] ${label} | Session ID: ${req.session ? req.session.id : 'none'} | Cookie: ${cookieHeader}`);
+  console.log(`[SESSION] ${label} | Session Data: ${JSON.stringify(sessionData)}`);
+}
+
 function renderMfaPage(qrCode) {
   const templatePath = path.join(__dirname, 'public', 'mfa.html');
   const template = fs.readFileSync(templatePath, 'utf8');
@@ -91,14 +107,17 @@ app.post('/login', (req, res) => {
     return QRCode.toDataURL(otpauth)
       .then((image) => {
         req.session.mfaQrCode = image;
+        logSessionState(`Pending MFA for ${email}`, req);
         res.send(renderMfaPage(image));
       })
       .catch(() => {
+        logSessionState(`MFA fallback for ${email}`, req);
         res.send(renderMfaPage(req.session.mfaQrCode || ''));
       });
   }
 
   req.session.user = { email, name: user.name, role: user.role };
+  logSessionState(`Login success for ${email}`, req);
   return res.redirect('/dashboard');
 });
 
@@ -123,6 +142,7 @@ app.post('/mfa', (req, res) => {
     name: pendingUser.name,
     role: pendingUser.role
   };
+  logSessionState(`MFA verified for ${pendingUser.email}`, req);
   req.session.pendingUser = null;
   req.session.mfaQrCode = null;
 
