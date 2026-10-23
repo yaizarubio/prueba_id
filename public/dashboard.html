@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <div class="container dashboard-wrap">
+      <div class="card dashboard-card">
+        <div class="topbar">
+          <div>
+            <div class="badge">Secure Lab</div>
+            <h1>Welcome</h1>
+          </div>
+          <form action="/logout" method="POST">
+            <button class="secondary" type="submit">Log out</button>
+          </form>
+        </div>
+
+        <div class="grid">
+          <div class="panel">
+            <h2>Identity status</h2>
+            <p>Authenticated successfully.</p>
+            <p><strong>Session:</strong> protected demo environment</p>
+            <p><strong>Objective:</strong> test phishing detection and identity controls</p>
+          </div>
+
+          <div class="panel">
+            <h2>Security controls</h2>
+            <ul>
+              <li>Strong password policy</li>
+              <li>MFA enforcement</li>
+              <li>Session protection</li>
+              <li>Logging and monitoring</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
