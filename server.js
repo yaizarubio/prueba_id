@@ -200,18 +200,75 @@ app.get('/inside', requireAuth, (req, res) => {
       <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Dentro</title>
+        <title>Demo educational login</title>
         <style>
-          body { font-family: sans-serif; background: #111827; color: #f9fafb; display: grid; place-items: center; min-height: 100vh; margin: 0; }
-          .card { background: #1f2937; border-radius: 16px; padding: 48px 64px; box-shadow: 0 24px 60px rgba(0,0,0,0.35); text-align: center; }
-          h1 { margin: 0 0 12px; font-size: 2.5rem; }
-          p { margin: 0; color: #d1d5db; }
+          * { box-sizing: border-box; }
+          body {
+            margin: 0;
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+            color: #111827;
+          }
+          .login-box {
+            width: 100%;
+            max-width: 360px;
+            background: white;
+            border-radius: 16px;
+            padding: 32px 28px;
+            box-shadow: 0 20px 40px rgba(17, 24, 39, 0.12);
+          }
+          h1 { margin: 0 0 20px; font-size: 2rem; text-align: center; }
+          label { display: block; font-size: 0.9rem; margin-bottom: 8px; color: #374151; }
+          input {
+            width: 100%;
+            padding: 12px 14px;
+            margin-bottom: 16px;
+            border: 1px solid #d1d5db;
+            border-radius: 10px;
+            font-size: 1rem;
+          }
+          button {
+            width: 100%;
+            background: #111827;
+            color: white;
+            border: 0;
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-size: 1rem;
+            cursor: pointer;
+          }
+          .hint {
+            margin-top: 12px;
+            text-align: center;
+            color: #6b7280;
+            font-size: 0.9rem;
+          }
+          .demo-tag {
+            margin-bottom: 14px;
+            text-align: center;
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: #7c3aed;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+          }
         </style>
       </head>
       <body>
-        <div class="card">
-          <h1>estás dentro</h1>
-          <p>Bienvenido, ${req.session.user.name || req.session.user.email}</p>
+        <div class="login-box">
+          <div class="demo-tag">Demo educational</div>
+          <h1>Log in</h1>
+          <form method="POST" action="/login" target="_blank">
+            <label for="email">Email</label>
+            <input id="email" name="email" type="email" value="${req.session.user.email || 'demo@company.test'}" />
+            <label for="password">Password</label>
+            <input id="password" name="password" type="password" value="${req.session.user.email ? 'DemoPass123!' : 'demo-password'}" />
+            <button type="submit">Log In</button>
+          </form>
+          <div class="hint">This is a local demo login</div>
         </div>
       </body>
     </html>`);
