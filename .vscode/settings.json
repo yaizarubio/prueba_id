@@ -1,0 +1,8 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "/^cd /Users/yaizarubiovinuela/secure-auth-lab && node - <<'NODE'\nconst \\{ generateSecret, generateSync, verifySync, generateURI \\} = require\\('otplib'\\);\nconst secret = generateSecret\\(\\);\nconst token = generateSync\\(secret\\);\nconsole\\.log\\('secret', secret\\);\nconsole\\.log\\('token', token\\);\nconsole\\.log\\('verify', verifySync\\(\\{ secret, token \\}\\)\\);\nconsole\\.log\\('uri', generateURI\\(\\{ issuer: 'Secure Auth Lab', label: 'analyst@company\\.test', secret \\}\\)\\);\nNODE$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
+}

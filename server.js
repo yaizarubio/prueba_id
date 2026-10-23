@@ -1,25 +1,29 @@
 const express = require('express');
 const session = require('express-session');
 const path = require('path');
+const fs = require('fs');
+const QRCode = require('qrcode');
+const { generateTotpSecret, verifyTotp, getOtpAuthUrl } = require('./auth');
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const SESSION_SECRET = process.env.SESSION_SECRET || 'change-this-secret';
-const MFA_CODE = process.env.MFA_CODE || '123456';
 
 const users = {
   'analyst@company.test': {
     password: 'DemoPass123!',
     name: 'Security Analyst',
     mfa: true,
-    role: 'Security Analyst'
+    role: 'Security Analyst',
+    mfaSecret: generateTotpSecret()
   },
   'admin@company.test': {
     password: 'AdminPass456!',
     name: 'Security Admin',
     mfa: true,
-    role: 'Security Admin'
+    role: 'Security Admin',
+    mfaSecret: generateTotpSecret()
   }
 };
 
@@ -44,6 +48,12 @@ function requireAuth(req, res, next) {
     return res.redirect('/');
   }
   next();
+}
+
+function renderMfaPage(qrCode) {
+  const templatePath = path.join(__dirname, 'public', 'mfa.html');
+  const template = fs.readFileSync(templatePath, 'utf8');
+  return template.replace('{{qrCode}}', qrCode || '');
 }
 
 app.get('/health', (req, res) => {
@@ -72,11 +82,20 @@ app.post('/login', (req, res) => {
     email,
     name: user.name,
     role: user.role,
-    mfa: user.mfa
+    mfa: user.mfa,
+    mfaSecret: user.mfaSecret
   };
 
   if (user.mfa) {
-    return res.sendFile(path.join(__dirname, 'public', 'mfa.html'));
+    const otpauth = getOtpAuthUrl(email, user.mfaSecret, 'Secure Auth Lab');
+    return QRCode.toDataURL(otpauth)
+      .then((image) => {
+        req.session.mfaQrCode = image;
+        res.send(renderMfaPage(image));
+      })
+      .catch(() => {
+        res.send(renderMfaPage(req.session.mfaQrCode || ''));
+      });
   }
 
   req.session.user = { email, name: user.name, role: user.role };
@@ -92,7 +111,9 @@ app.post('/mfa', (req, res) => {
     return res.redirect('/');
   }
 
-  if (code !== MFA_CODE) {
+  const validCode = verifyTotp(pendingUser.mfaSecret, code);
+
+  if (!validCode) {
     console.log(`[MFA] Invalid code for: ${pendingUser.email}`);
     return res.status(401).send('<h2>Invalid MFA code</h2><p><a href="/">Back to login</a></p>');
   }
@@ -103,6 +124,7 @@ app.post('/mfa', (req, res) => {
     role: pendingUser.role
   };
   req.session.pendingUser = null;
+  req.session.mfaQrCode = null;
 
   return res.redirect('/dashboard');
 });

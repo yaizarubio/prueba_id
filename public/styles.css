@@ -164,6 +164,25 @@ body {
   font-size: 14px;
 }
 
+.qr-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #f7f7f7;
+  border: 1px solid var(--fb-border);
+  border-radius: 12px;
+  padding: 12px;
+  margin: 16px 0;
+}
+
+.qr-wrap img {
+  display: block;
+  width: 180px;
+  height: 180px;
+  background: #fff;
+  border-radius: 8px;
+}
+
 .demo-box strong {
   color: var(--fb-text);
 }
