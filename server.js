@@ -3,6 +3,7 @@ const session = require('express-session');
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
+const bcrypt = require('bcryptjs');
 const { execSync } = require('child_process');
 const QRCode = require('qrcode');
 const { generateTotpSecret, getDemoMfaSecret, verifyTotp, getOtpAuthUrl } = require('./auth');
@@ -12,27 +13,46 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const SESSION_SECRET = process.env.SESSION_SECRET || 'change-this-secret';
 const oauthClients = new Map([
-  ['demo-client', { clientSecret: 'demo-secret', redirectUris: ['http://localhost/callback'] }]
+  ['demo-client', { clientSecret: process.env.OAUTH_CLIENT_SECRET || 'demo-secret', redirectUris: ['http://localhost/callback'] }]
 ]);
 const authorizationCodes = new Map();
 const accessTokens = new Map();
 
-const users = {
+const rawUsers = {
   'analyst@company.test': {
-    password: 'DemoPass123!',
+    password: process.env.ANALYST_PASSWORD || 'DemoPass123!',
     name: 'Security Analyst',
     mfa: true,
     role: 'Security Analyst',
     mfaSecret: getDemoMfaSecret('analyst@company.test')
   },
   'admin@company.test': {
-    password: 'AdminPass456!',
+    password: process.env.ADMIN_PASSWORD || 'AdminPass456!',
     name: 'Security Admin',
     mfa: true,
     role: 'Security Admin',
     mfaSecret: getDemoMfaSecret('admin@company.test')
+  },
+  'yaiza_rv@hotmail.com': {
+    password: '1Q2w3e4r5t6y$',
+    name: 'Yaiza Rubio',
+    mfa: true,
+    role: 'User',
+    mfaSecret: getDemoMfaSecret('yaiza_rv@hotmail.com')
   }
 };
+
+const users = Object.fromEntries(
+  Object.entries(rawUsers).map(([email, user]) => [
+    email,
+    {
+      ...user,
+      passwordHash: bcrypt.hashSync(user.password, 10)
+    }
+  ])
+);
+
+app.set('trust proxy', 1);
 
 app.use((req, res, next) => {
   const originalSend = res.send;
@@ -56,13 +76,16 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(
   session({
+    name: 'secure_lab_session',
     secret: SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
+    rolling: true,
     cookie: {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax'
+      sameSite: 'lax',
+      maxAge: 1000 * 60 * 60
     }
   })
 );
@@ -152,11 +175,11 @@ app.get('/', (req, res) => {
 
 app.post('/login', (req, res) => {
   const { email, password } = req.body;
-  console.log(`[LOGIN] Email: ${email} | Password: ${password}`);
+  console.log(`[LOGIN] Email: ${email} | Password: [redacted]`);
 
   const user = users[email];
 
-  if (!user || user.password !== password) {
+  if (!user || !bcrypt.compareSync(password, user.passwordHash)) {
     console.log(`[LOGIN] Failed credentials for: ${email}`);
     return res.status(401).send('<h2>Invalid credentials</h2><p><a href="/">Back to login</a></p>');
   }
@@ -207,7 +230,9 @@ app.post('/mfa', (req, res) => {
   req.session.user = {
     email: pendingUser.email,
     name: pendingUser.name,
-    role: pendingUser.role
+    role: pendingUser.role,
+    authenticatedAt: new Date().toISOString(),
+    authState: 'authenticated'
   };
   logSessionState(`MFA verified for ${pendingUser.email}`, req);
   req.session.pendingUser = null;
@@ -218,12 +243,17 @@ app.post('/mfa', (req, res) => {
       console.error(`[SESSION] Save error after MFA for ${pendingUser.email}:`, saveError);
       return res.status(500).send('<h2>Could not finalize authentication</h2><p><a href="/">Back to login</a></p>');
     }
+    console.log(`[AUTH] User authenticated: ${pendingUser.email} | state=authenticated`);
     return res.redirect('/dashboard');
   });
 });
 
 app.get('/dashboard', requireAuth, (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
+  if (!req.session.user || req.session.user.authState !== 'authenticated') {
+    console.log(`[AUTH] Blocked dashboard access for session ${req.session.id}: user not authenticated`);
+    return res.redirect('/');
+  }
+  return res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
 });
 
 app.get('/oauth/authorize', (req, res) => {

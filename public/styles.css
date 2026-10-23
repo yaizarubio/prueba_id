@@ -1,15 +1,14 @@
 :root {
-  --fb-blue: #1877f2;
-  --fb-blue-dark: #166fe5;
-  --fb-bg: #f0f2f5;
-  --fb-card: #ffffff;
-  --fb-soft: #f7f8fa;
-  --fb-text: #1c1e21;
-  --fb-muted: #65676b;
-  --fb-border: #dfe3ee;
-  --fb-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-  --fb-green: #42b72a;
-  --fb-green-dark: #36a420;
+  --blue: #1877f2;
+  --blue-dark: #166fe5;
+  --bg: #f0f2f5;
+  --card: #ffffff;
+  --text: #1c1e21;
+  --muted: #65676b;
+  --border: #dfe3ee;
+  --green: #42b72a;
+  --green-dark: #36a420;
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
 
 * { box-sizing: border-box; }
@@ -17,25 +16,24 @@
 body {
   margin: 0;
   font-family: "Segoe UI", Arial, Helvetica, sans-serif;
-  background: var(--fb-bg);
-  color: var(--fb-text);
+  background: var(--bg);
+  color: var(--text);
 }
 
-.facebook-page {
+.social-page {
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--fb-bg);
+  padding: 40px 20px;
 }
 
-.facebook-shell {
+.social-shell {
   width: min(980px, 100%);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 64px;
-  padding: 80px 24px;
+  gap: 54px;
 }
 
 .brand-panel {
@@ -43,198 +41,102 @@ body {
   max-width: 500px;
 }
 
-.facebook-logo {
+.brand-logo {
   font-size: 4.2rem;
   font-weight: 800;
   letter-spacing: -0.06em;
-  color: var(--fb-blue);
+  color: var(--blue);
   line-height: 1;
-  margin-bottom: 10px;
+  margin-bottom: 16px;
 }
 
 .brand-panel h1 {
-  font-size: 1.8rem;
-  line-height: 1.2;
-  font-weight: 400;
   margin: 0;
-  color: var(--fb-text);
+  font-size: 1.9rem;
+  line-height: 1.3;
+  font-weight: 400;
 }
 
 .auth-panel {
   width: min(396px, 100%);
 }
 
-.facebook-form {
-  background: var(--fb-card);
-  border: 1px solid var(--fb-border);
+.login-form {
+  background: var(--card);
+  border: 1px solid var(--border);
   border-radius: 12px;
-  box-shadow: var(--fb-shadow);
+  box-shadow: var(--shadow);
   padding: 16px 14px 12px;
 }
 
-.facebook-form input {
+.login-form input {
   width: 100%;
   padding: 14px 16px;
-  border: 1px solid var(--fb-border);
+  border: 1px solid var(--border);
   border-radius: 8px;
-  background: #fff;
-  color: var(--fb-text);
-  font-size: 17px;
   margin-bottom: 10px;
+  font-size: 17px;
 }
 
-.facebook-form input:focus {
-  border-color: var(--fb-blue);
-  box-shadow: 0 0 0 2px rgba(24,119,242,0.15);
+.login-form input:focus {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 2px rgba(24, 119, 242, 0.14);
   outline: none;
 }
 
-.facebook-form button {
+.login-form button {
   width: 100%;
-  border: none;
-  border-radius: 8px;
-  background: var(--fb-blue);
-  color: #fff;
   padding: 14px 16px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--blue);
+  color: #fff;
   font-size: 20px;
   font-weight: 700;
-  margin-top: 6px;
   cursor: pointer;
 }
 
-.facebook-form button:hover {
-  background: var(--fb-blue-dark);
-}
-
-.helper-row {
-  text-align: center;
-  margin: 14px 0 16px;
-}
-
-.helper-row a {
-  color: var(--fb-blue);
-  text-decoration: none;
-  font-size: 14px;
-  font-weight: 500;
-}
-
-.helper-row a:hover {
-  text-decoration: underline;
+.login-form button:hover {
+  background: var(--blue-dark);
 }
 
 .divider {
   display: flex;
   align-items: center;
-  text-align: center;
-  color: var(--fb-muted);
+  margin: 12px 0 16px;
+  color: var(--muted);
   font-size: 13px;
-  margin: 10px 0 18px;
 }
 
 .divider::before,
 .divider::after {
   content: "";
   flex: 1;
-  border-bottom: 1px solid var(--fb-border);
+  border-bottom: 1px solid var(--border);
 }
 
 .divider span {
   padding: 0 12px;
 }
 
-.create-account {
-  width: 60% !important;
-  margin: 0 auto 4px;
-  display: block;
-  background: var(--fb-green) !important;
-  font-size: 17px !important;
+.secondary-button {
+  background: var(--green) !important;
 }
 
-.create-account:hover {
-  background: var(--fb-green-dark) !important;
-}
-
-.demo-box {
-  margin-top: 16px;
-  background: rgba(255,255,255,0.5);
-  border: 1px solid var(--fb-border);
-  border-radius: 10px;
-  padding: 12px 14px;
-  color: var(--fb-muted);
-  font-size: 14px;
-}
-
-.qr-wrap {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background: #f7f7f7;
-  border: 1px solid var(--fb-border);
-  border-radius: 12px;
-  padding: 12px;
-  margin: 16px 0;
-}
-
-.qr-wrap img {
-  display: block;
-  width: 180px;
-  height: 180px;
-  background: #fff;
-  border-radius: 8px;
-}
-
-.session-panel {
-  margin-top: 18px;
-}
-
-.cookie-label {
-  margin: 0 0 12px;
-  color: var(--fb-muted);
-  font-weight: 700;
-}
-
-#sessionCookieValue {
-  display: block;
-  background: #f4f5f7;
-  border: 1px solid var(--fb-border);
-  border-radius: 8px;
-  padding: 12px;
-  color: var(--fb-text);
-  font-size: 12px;
-  white-space: pre-wrap;
-  word-break: break-all;
-  line-height: 1.5;
-}
-
-.demo-box strong {
-  color: var(--fb-text);
-}
-
-.demo-box ul {
-  margin: 8px 0;
-  padding-left: 18px;
-}
-
-.demo-box p {
-  margin: 6px 0 0;
-  font-weight: 600;
-  color: var(--fb-text);
-}
-
-.container,
-.narrow,
-.card,
-.badge,
-.notes,
-.topbar,
-.grid,
-.panel,
-.dashboard-card,
-.dashboard-wrap {
-  all: unset;
+.secondary-button:hover {
+  background: var(--green-dark) !important;
 }
 
 @media (max-width: 860px) {
+  .social-shell {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .brand-panel {
+    max-width: 100%;
+  }
+}
   .facebook-shell {
     flex-direction: column;
     padding-top: 36px;

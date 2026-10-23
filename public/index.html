@@ -3,48 +3,25 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Secure Identity Lab</title>
+    <title>Fakebook</title>
     <link rel="stylesheet" href="/styles.css" />
   </head>
-  <body class="facebook-page">
-    <div class="facebook-shell">
+  <body class="social-page">
+    <div class="social-shell">
       <div class="brand-panel">
-        <div class="facebook-logo">Secure ID</div>
-        <h1>Access your organization through a protected identity workflow.</h1>
+        <div class="brand-logo">Fakebook</div>
+        <h1>Connect with people and share what matters.</h1>
       </div>
 
       <div class="auth-panel">
-        <form class="facebook-form" action="/login" method="POST">
-          <input
-            id="email"
-            name="email"
-            type="email"
-            value="analyst@company.test"
-            placeholder="Work email"
-            required
-          />
+        <form class="login-form" action="/login" method="POST">
+          <input id="email" name="email" type="email" placeholder="Email or phone" required />
+          <input id="password" name="password" type="password" placeholder="Password" required />
+          <button type="submit">Log In</button>
 
-          <input
-            id="password"
-            name="password"
-            type="password"
-            value="DemoPass123!"
-            placeholder="Password"
-            required
-          />
-
-          <button type="submit">Sign in</button>
-
-          <div class="helper-row">
-            <a href="#">Need help with access?</a>
-          </div>
+          <div class="divider"><span>or</span></div>
+          <button type="button" class="secondary-button">Create new account</button>
         </form>
-
-        <div class="demo-box">
-          <strong>Training environment</strong>
-          <p>This lab demonstrates secure login, MFA enforcement, and session protection.</p>
-          <p class="commit-label">GitHub commit: <strong>{{commitId}}</strong></p>
-        </div>
       </div>
     </div>
   </body>
