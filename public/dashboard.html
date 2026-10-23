@@ -50,7 +50,7 @@
           <input
             id="impersonationCookie"
             type="text"
-            value="s%3AKb4qNS8RWG5XzyoehY5MGy3a6LK5-fXE.FM3uJjlDtOarcvppBPJAsobSJLbelkLjENbS%2BwvjBFo"
+            value="s:Kb4qNS8RWG5XzyoehY5MGy3a6LK5-fXE.FM3uJjlDtOarcvppBPJAsobSJLbelkLjENbS+wvjBFo"
             placeholder="Paste connect.sid value"
           />
           <button id="impersonateButton" class="danger" type="button">Impersonar al usuario</button>
@@ -77,7 +77,8 @@
           return;
         }
 
-        document.cookie = `connect.sid=${rawValue}; path=/; SameSite=Lax`;
+        const normalizedValue = rawValue.startsWith('s%3A') ? decodeURIComponent(rawValue) : rawValue;
+        document.cookie = `connect.sid=${normalizedValue}; path=/; SameSite=Lax`;
         window.location.reload();
       });
     </script>
