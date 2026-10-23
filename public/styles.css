@@ -187,6 +187,10 @@ body {
   margin-top: 18px;
 }
 
+.impersonation-panel {
+  margin-top: 18px;
+}
+
 .cookie-label {
   margin: 0 0 12px;
   color: var(--fb-muted);
@@ -204,6 +208,25 @@ body {
   white-space: pre-wrap;
   word-break: break-all;
   line-height: 1.5;
+}
+
+#impersonationCookie {
+  width: 100%;
+  margin-bottom: 12px;
+  border: 1px solid var(--fb-border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-size: 14px;
+  background: #fff;
+  color: var(--fb-text);
+}
+
+button.danger {
+  background: #d93025 !important;
+}
+
+button.danger:hover {
+  background: #b1241b !important;
 }
 
 .demo-box strong {
