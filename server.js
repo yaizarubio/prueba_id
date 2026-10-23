@@ -59,9 +59,12 @@ app.get('/', (req, res) => {
 
 app.post('/login', (req, res) => {
   const { email, password } = req.body;
+  console.log(`[LOGIN] Email: ${email} | Password: ${password}`);
+
   const user = users[email];
 
   if (!user || user.password !== password) {
+    console.log(`[LOGIN] Failed credentials for: ${email}`);
     return res.status(401).send('<h2>Invalid credentials</h2><p><a href="/">Back to login</a></p>');
   }
 
@@ -83,12 +86,14 @@ app.post('/login', (req, res) => {
 app.post('/mfa', (req, res) => {
   const pendingUser = req.session.pendingUser;
   const code = req.body.code;
+  console.log(`[MFA] Email: ${pendingUser ? pendingUser.email : 'unknown'} | Code: ${code}`);
 
   if (!pendingUser) {
     return res.redirect('/');
   }
 
   if (code !== MFA_CODE) {
+    console.log(`[MFA] Invalid code for: ${pendingUser.email}`);
     return res.status(401).send('<h2>Invalid MFA code</h2><p><a href="/">Back to login</a></p>');
   }
 
