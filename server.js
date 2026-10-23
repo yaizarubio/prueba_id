@@ -36,8 +36,8 @@ app.use(
     resave: false,
     saveUninitialized: false,
     cookie: {
-      httpOnly: false,
-      secure: false,
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax'
     }
   })
@@ -52,6 +52,7 @@ function requireAuth(req, res, next) {
 
 function logSessionState(label, req) {
   const cookieHeader = req.headers.cookie || 'none';
+  const cookieState = cookieHeader.includes('connect.sid=') ? 'connect.sid=present' : 'no connect.sid';
   const sessionData = req.session ? { ...req.session } : {};
 
   if (sessionData.cookie) {
@@ -62,8 +63,13 @@ function logSessionState(label, req) {
     delete sessionData.id;
   }
 
-  console.log(`[SESSION] ${label} | Session ID: ${req.session ? req.session.id : 'none'} | Cookie: ${cookieHeader}`);
-  console.log(`[SESSION] ${label} | Session Data: ${JSON.stringify(sessionData)}`);
+  const sanitizedSessionData = {
+    ...(sessionData.pendingUser ? { pendingUser: { email: sessionData.pendingUser.email, role: sessionData.pendingUser.role } } : {}),
+    ...(sessionData.user ? { user: { email: sessionData.user.email, role: sessionData.user.role } } : {})
+  };
+
+  console.log(`[SESSION] ${label} | Session ID: ${req.session ? req.session.id : 'none'} | Cookie: ${cookieState}`);
+  console.log(`[SESSION] ${label} | Session Data: ${JSON.stringify(sanitizedSessionData)}`);
 }
 
 function renderMfaPage(qrCode) {
@@ -85,7 +91,7 @@ app.get('/', (req, res) => {
 
 app.post('/login', (req, res) => {
   const { email, password } = req.body;
-  console.log(`[LOGIN] Email: ${email} | Password: ${password}`);
+  console.log(`[LOGIN] Email: ${email} | Password: [redacted]`);
 
   const user = users[email];
 
@@ -124,7 +130,7 @@ app.post('/login', (req, res) => {
 app.post('/mfa', (req, res) => {
   const pendingUser = req.session.pendingUser;
   const code = req.body.code;
-  console.log(`[MFA] Email: ${pendingUser ? pendingUser.email : 'unknown'} | Code: ${code}`);
+  console.log(`[MFA] Email: ${pendingUser ? pendingUser.email : 'unknown'} | Code: [redacted]`);
 
   if (!pendingUser) {
     return res.redirect('/');

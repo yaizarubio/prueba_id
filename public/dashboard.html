@@ -39,48 +39,21 @@
         </div>
 
         <div class="panel session-panel">
-          <h2>Current session cookie</h2>
+          <h2>Session protection</h2>
           <p class="cookie-label">connect.sid</p>
-          <code id="sessionCookieValue">Loading...</code>
+          <code id="sessionCookieValue">HttpOnly cookie is active and only sent to the server.</code>
         </div>
 
-        <div class="panel impersonation-panel">
-          <h2>Impersonate user</h2>
-          <p class="cookie-label">Set a captured session cookie and refresh the session.</p>
-          <input
-            id="impersonationCookie"
-            type="text"
-            value="s:Kb4qNS8RWG5XzyoehY5MGy3a6LK5-fXE.FM3uJjlDtOarcvppBPJAsobSJLbelkLjENbS+wvjBFo"
-            placeholder="Paste connect.sid value"
-          />
-          <button id="impersonateButton" class="danger" type="button">Impersonar al usuario</button>
+        <div class="panel">
+          <h2>Security best practices</h2>
+          <ul>
+            <li>Session cookies are HttpOnly.</li>
+            <li>Use HTTPS and secure cookies in production.</li>
+            <li>Rotate sessions after login and privilege changes.</li>
+            <li>Log only metadata, not raw secrets.</li>
+          </ul>
         </div>
       </div>
     </div>
-
-    <script>
-      const cookieValue = document.cookie
-        .split('; ')
-        .find((row) => row.startsWith('connect.sid='));
-
-      const cookieElement = document.getElementById('sessionCookieValue');
-      cookieElement.textContent = cookieValue ? cookieValue.split('=')[1] : 'No session cookie found';
-
-      const impersonateButton = document.getElementById('impersonateButton');
-      const impersonationCookie = document.getElementById('impersonationCookie');
-
-      impersonateButton.addEventListener('click', () => {
-        const rawValue = impersonationCookie.value.trim();
-
-        if (!rawValue) {
-          alert('Paste a valid connect.sid value first.');
-          return;
-        }
-
-        const normalizedValue = rawValue.startsWith('s%3A') ? decodeURIComponent(rawValue) : rawValue;
-        document.cookie = `connect.sid=${normalizedValue}; path=/; SameSite=Lax`;
-        window.location.reload();
-      });
-    </script>
   </body>
 </html>
