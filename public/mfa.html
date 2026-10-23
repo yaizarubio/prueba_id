@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>MFA Verification</title>
+    <title>Secure Identity Lab - MFA</title>
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body class="facebook-page">
@@ -12,13 +12,13 @@
         <form class="facebook-form" action="/mfa" method="POST">
           <div class="badge">Step 2 of 2</div>
           <h1>Two-factor authentication</h1>
-          <p class="subtitle">Open Microsoft Authenticator and scan the QR code, then enter the 6-digit code.</p>
+          <p class="subtitle">Open your authenticator app, scan the QR code, and enter the 6-digit verification code.</p>
 
           <div class="qr-wrap">
             <img src="{{qrCode}}" alt="Authenticator QR code" />
           </div>
 
-          <input id="code" name="code" type="text" maxlength="6" placeholder="123456" required />
+          <input id="code" name="code" type="text" maxlength="6" placeholder="Enter verification code" required />
           <button type="submit">Verify</button>
         </form>
       </div>
