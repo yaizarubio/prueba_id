@@ -2,6 +2,7 @@ const express = require('express');
 const session = require('express-session');
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
 const { execSync } = require('child_process');
 const QRCode = require('qrcode');
 const { generateTotpSecret, getDemoMfaSecret, verifyTotp, getOtpAuthUrl } = require('./auth');
@@ -10,6 +11,11 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 const SESSION_SECRET = process.env.SESSION_SECRET || 'change-this-secret';
+const oauthClients = new Map([
+  ['demo-client', { clientSecret: 'demo-secret', redirectUris: ['http://localhost/callback'] }]
+]);
+const authorizationCodes = new Map();
+const accessTokens = new Map();
 
 const users = {
   'analyst@company.test': {
@@ -27,6 +33,23 @@ const users = {
     mfaSecret: getDemoMfaSecret('admin@company.test')
   }
 };
+
+app.use((req, res, next) => {
+  const originalSend = res.send;
+  res.send = function (body) {
+    const statusCode = res.statusCode || 200;
+    console.log(`[HTTP] ${req.method} ${req.originalUrl} -> ${statusCode}`);
+    return originalSend.call(this, body);
+  };
+  const originalJson = res.json;
+  res.json = function (body) {
+    const statusCode = res.statusCode || 200;
+    console.log(`[HTTP] ${req.method} ${req.originalUrl} -> ${statusCode}`);
+    return originalJson.call(this, body);
+  };
+  console.log(`[HTTP] ${req.method} ${req.originalUrl} start`);
+  next();
+});
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -91,6 +114,29 @@ function renderLandingPage() {
   const templatePath = path.join(__dirname, 'public', 'index.html');
   const template = fs.readFileSync(templatePath, 'utf8');
   return template.replace('{{commitId}}', getCurrentCommitId());
+}
+
+function issueAuthorizationCode(clientId, redirectUri, user) {
+  const code = crypto.randomBytes(24).toString('hex');
+  authorizationCodes.set(code, {
+    clientId,
+    redirectUri,
+    user,
+    issuedAt: Date.now(),
+    expiresAt: Date.now() + 600000
+  });
+  return code;
+}
+
+function issueAccessToken(user, scope = 'openid profile') {
+  const accessToken = crypto.randomBytes(32).toString('hex');
+  accessTokens.set(accessToken, {
+    user,
+    scope,
+    issuedAt: Date.now(),
+    expiresAt: Date.now() + 3600000
+  });
+  return accessToken;
 }
 
 app.get('/health', (req, res) => {
@@ -174,12 +220,107 @@ app.get('/dashboard', requireAuth, (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
 });
 
+app.get('/oauth/authorize', (req, res) => {
+  const { client_id, redirect_uri, response_type, scope, state } = req.query;
+
+  if (!req.session.user) {
+    return res.redirect('/');
+  }
+
+  if (response_type !== 'code') {
+    return res.status(400).json({ error: 'unsupported_response_type' });
+  }
+
+  const client = oauthClients.get(client_id);
+  if (!client) {
+    return res.status(400).json({ error: 'unauthorized_client' });
+  }
+
+  if (!client.redirectUris.includes(redirect_uri)) {
+    return res.status(400).json({ error: 'invalid_redirect_uri' });
+  }
+
+  const code = issueAuthorizationCode(client_id, redirect_uri, req.session.user);
+  const redirectUrl = new URL(redirect_uri);
+  redirectUrl.searchParams.set('code', code);
+  if (state) {
+    redirectUrl.searchParams.set('state', state);
+  }
+
+  return res.redirect(redirectUrl.toString());
+});
+
+app.post('/oauth/token', (req, res) => {
+  const { grant_type, code, redirect_uri, client_id, client_secret } = req.body;
+
+  if (grant_type !== 'authorization_code') {
+    return res.status(400).json({ error: 'unsupported_grant_type' });
+  }
+
+  const client = oauthClients.get(client_id);
+  if (!client || client.clientSecret !== client_secret) {
+    return res.status(401).json({ error: 'invalid_client' });
+  }
+
+  const authorizationCode = authorizationCodes.get(code);
+  if (!authorizationCode) {
+    return res.status(400).json({ error: 'invalid_grant' });
+  }
+
+  if (authorizationCode.clientId !== client_id || authorizationCode.redirectUri !== redirect_uri) {
+    return res.status(400).json({ error: 'invalid_grant' });
+  }
+
+  if (Date.now() > authorizationCode.expiresAt) {
+    authorizationCodes.delete(code);
+    return res.status(400).json({ error: 'invalid_grant' });
+  }
+
+  authorizationCodes.delete(code);
+
+  const accessToken = issueAccessToken(authorizationCode.user, 'openid profile');
+  return res.json({
+    access_token: accessToken,
+    token_type: 'Bearer',
+    expires_in: 3600,
+    scope: 'openid profile'
+  });
+});
+
+app.get('/oauth/userinfo', (req, res) => {
+  const authHeader = req.headers.authorization || '';
+  const match = authHeader.match(/^Bearer\s+(.+)$/i);
+
+  if (!match) {
+    return res.status(401).json({ error: 'invalid_token' });
+  }
+
+  const token = match[1];
+  const tokenRecord = accessTokens.get(token);
+
+  if (!tokenRecord || Date.now() > tokenRecord.expiresAt) {
+    accessTokens.delete(token);
+    return res.status(401).json({ error: 'invalid_token' });
+  }
+
+  return res.json({
+    sub: tokenRecord.user.email,
+    email: tokenRecord.user.email,
+    name: tokenRecord.user.name,
+    role: tokenRecord.user.role
+  });
+});
+
 app.post('/logout', (req, res) => {
   req.session.destroy(() => {
     res.redirect('/');
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`Secure auth lab listening on http://localhost:${PORT}`);
-});
+module.exports = { app };
+
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Secure auth lab listening on http://localhost:${PORT}`);
+  });
+}
