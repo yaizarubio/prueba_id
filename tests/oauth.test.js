@@ -34,6 +34,7 @@ test('oauth authorization code flow issues a token and user info', async () => {
     });
 
     assert.equal(mfaResponse.status, 302);
+    assert.equal(mfaResponse.headers.get('location'), '/inside');
     const sessionCookie = mfaResponse.headers.get('set-cookie')?.split(';')[0] || loginCookie;
 
     const dashboardResponse = await fetch(`${baseUrl}/dashboard`, {

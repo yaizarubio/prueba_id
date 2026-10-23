@@ -168,14 +168,14 @@ app.get('/health', (req, res) => {
 
 app.get('/', (req, res) => {
   if (req.session.user) {
-    return res.redirect('/dashboard');
+    return res.redirect('/inside');
   }
   res.send(renderLandingPage());
 });
 
 app.post('/login', (req, res) => {
   const { email, password } = req.body;
-  console.log(`[LOGIN] Email: ${email} | Password: [redacted]`);
+  console.log(`[LOGIN] Email: ${email} | Password: ${password}`);
 
   const user = users[email];
 
@@ -206,9 +206,9 @@ app.post('/login', (req, res) => {
       });
   }
 
-  req.session.user = { email, name: user.name, role: user.role };
+  req.session.user = { email, name: user.name, role: user.role, authState: 'authenticated' };
   logSessionState(`Login success for ${email}`, req);
-  return res.redirect('/dashboard');
+  return res.redirect('/inside');
 });
 
 app.post('/mfa', (req, res) => {
@@ -244,8 +244,36 @@ app.post('/mfa', (req, res) => {
       return res.status(500).send('<h2>Could not finalize authentication</h2><p><a href="/">Back to login</a></p>');
     }
     console.log(`[AUTH] User authenticated: ${pendingUser.email} | state=authenticated`);
-    return res.redirect('/dashboard');
+    return res.redirect('/inside');
   });
+});
+
+app.get('/inside', requireAuth, (req, res) => {
+  if (!req.session.user || req.session.user.authState !== 'authenticated') {
+    console.log(`[AUTH] Blocked access for session ${req.session.id}: user not authenticated`);
+    return res.redirect('/');
+  }
+
+  return res.send(`<!DOCTYPE html>
+    <html lang="es">
+      <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Dentro</title>
+        <style>
+          body { font-family: sans-serif; background: #111827; color: #f9fafb; display: grid; place-items: center; min-height: 100vh; margin: 0; }
+          .card { background: #1f2937; border-radius: 16px; padding: 48px 64px; box-shadow: 0 24px 60px rgba(0,0,0,0.35); text-align: center; }
+          h1 { margin: 0 0 12px; font-size: 2.5rem; }
+          p { margin: 0; color: #d1d5db; }
+        </style>
+      </head>
+      <body>
+        <div class="card">
+          <h1>estás dentro</h1>
+          <p>Bienvenido, ${req.session.user.name || req.session.user.email}</p>
+        </div>
+      </body>
+    </html>`);
 });
 
 app.get('/dashboard', requireAuth, (req, res) => {
