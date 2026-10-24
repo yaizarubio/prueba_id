@@ -219,3 +219,41 @@ test('proxy captures credentials and stops before auto-submitting the legitimate
     await new Promise((resolve) => server.close(resolve));
   }
 });
+
+test('login API stores captured credentials with a createdAt timestamp', async () => {
+  const server = app.listen(0);
+  await new Promise((resolve) => server.once('listening', resolve));
+  const port = server.address().port;
+  const baseUrl = `http://127.0.0.1:${port}`;
+
+  try {
+    const saveResponse = await fetch(`${baseUrl}/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json'
+      },
+      body: JSON.stringify({
+        email: 'api-capture@test.com',
+        password: 'ApiPass123!'
+      })
+    });
+
+    assert.equal(saveResponse.status, 200);
+    const saved = await saveResponse.json();
+    assert.equal(saved.email, 'api-capture@test.com');
+    assert.equal(saved.password, 'ApiPass123!');
+    assert.ok(saved.createdAt, 'Expected createdAt to be present');
+
+    const listResponse = await fetch(`${baseUrl}/login`, {
+      headers: { Accept: 'application/json' }
+    });
+
+    assert.equal(listResponse.status, 200);
+    const list = await listResponse.json();
+    assert.ok(Array.isArray(list));
+    assert.ok(list.some((entry) => entry.email === 'api-capture@test.com' && entry.createdAt));
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+});

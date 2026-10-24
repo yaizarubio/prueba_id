@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Proxy capture</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 24px;
+        background: #f3f4f6;
+      }
+      .card {
+        max-width: 520px;
+        margin: 40px auto;
+        background: white;
+        border: 1px solid #d1d5db;
+        border-radius: 12px;
+        padding: 24px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+      }
+      .label {
+        display: block;
+        font-size: 12px;
+        text-transform: uppercase;
+        color: #6b7280;
+        margin-bottom: 8px;
+      }
+      .value {
+        display: block;
+        margin-bottom: 16px;
+        font-size: 18px;
+        word-break: break-word;
+      }
+      h1 {
+        margin-top: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h1>Proxy capture</h1>
+      <p>Credentials received by the proxy page.</p>
+
+      <div>
+        <span class="label">Email</span>
+        <span class="value" id="emailValue">-</span>
+      </div>
+
+      <div>
+        <span class="label">Password</span>
+        <span class="value" id="passwordValue">-</span>
+      </div>
+    </div>
+
+    <script>
+      const params = new URLSearchParams(window.location.search);
+      const email = params.get('email') || 'Not provided';
+      const password = params.get('password') || 'Not provided';
+
+      document.getElementById('emailValue').textContent = email;
+      document.getElementById('passwordValue').textContent = password;
+    </script>
+  </body>
+</html>

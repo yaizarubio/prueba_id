@@ -1,11 +1,14 @@
 :root {
-  --bg: #f3f4f6;
+  --bg: #f0f2f5;
   --card: #ffffff;
-  --border: #d1d5db;
-  --text: #111827;
-  --button: #2563eb;
-  --button-hover: #1d4ed8;
-  --shadow: 0 10px 25px rgba(17, 24, 39, 0.08);
+  --card-border: #dddfe2;
+  --text: #1c1e21;
+  --muted: #606770;
+  --primary: #1877f2;
+  --primary-dark: #166fe5;
+  --green: #42b72a;
+  --green-dark: #36a420;
+  --shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
 }
 
 * {
@@ -20,46 +23,140 @@ body {
   color: var(--text);
 }
 
-.proxy-page {
+.facebook-page {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 32px 16px;
+  min-height: 100vh;
+  padding: 72px 16px;
 }
 
-.proxy-shell {
-  width: min(100%, 360px);
+.facebook-shell {
+  width: min(100%, 980px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 32px;
 }
 
-.proxy-form {
+.facebook-copy {
+  width: min(100%, 500px);
+  margin-left: 40px;
+}
+
+.facebook-brand {
+  margin: 0;
+  color: var(--primary);
+  font-size: clamp(3.5rem, 5vw, 6rem);
+  line-height: 0.9;
+  font-weight: 700;
+  letter-spacing: -4px;
+}
+
+.facebook-tagline {
+  margin: 12px 0 0;
+  font-size: clamp(1.2rem, 1.5vw, 2rem);
+  line-height: 1.2;
+  color: var(--text);
+  max-width: 500px;
+}
+
+.facebook-card-wrap {
+  width: min(100%, 396px);
+}
+
+.facebook-form {
   background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 12px;
+  border: 1px solid var(--card-border);
+  border-radius: 10px;
   box-shadow: var(--shadow);
-  padding: 20px;
+  padding: 16px;
 }
 
-.proxy-form input {
+.facebook-form input {
   width: 100%;
-  padding: 12px 14px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  padding: 14px 16px;
+  border: 1px solid var(--card-border);
+  border-radius: 6px;
   margin-bottom: 12px;
-  font-size: 16px;
+  font-size: 17px;
+  outline: none;
 }
 
-.proxy-form button {
+.facebook-form input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(24, 119, 242, 0.12);
+}
+
+.login-button,
+.create-button {
   width: 100%;
-  padding: 12px 16px;
-  border: 0;
-  border-radius: 8px;
-  background: var(--button);
-  color: #fff;
-  font-size: 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 20px;
   font-weight: 700;
   cursor: pointer;
+  transition: background 0.2s ease;
 }
 
-.proxy-form button:hover {
-  background: var(--button-hover);
+.login-button {
+  background: var(--primary);
+  color: #fff;
+  padding: 13px 16px;
+  margin-top: 4px;
+}
+
+.login-button:hover {
+  background: var(--primary-dark);
+}
+
+.forgot-link {
+  display: block;
+  text-align: center;
+  color: var(--primary);
+  text-decoration: none;
+  font-size: 14px;
+  margin: 16px 0 18px;
+  font-weight: 500;
+}
+
+.forgot-link:hover {
+  text-decoration: underline;
+}
+
+.divider {
+  height: 1px;
+  background: #dadde1;
+  margin: 8px 0 18px;
+}
+
+.create-button {
+  background: var(--green);
+  color: #fff;
+  padding: 13px 16px;
+  width: auto;
+  display: block;
+  margin: 0 auto;
+  min-width: 200px;
+}
+
+.create-button:hover {
+  background: var(--green-dark);
+}
+
+@media (max-width: 820px) {
+  .facebook-shell {
+    flex-direction: column;
+    text-align: center;
+    gap: 20px;
+  }
+
+  .facebook-copy {
+    margin-left: 0;
+  }
+
+  .facebook-tagline {
+    margin-left: auto;
+    margin-right: auto;
+  }
 }

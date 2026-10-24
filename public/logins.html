@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login attempts</title>
+    <style>
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background: #f3f4f6;
+        color: #111827;
+      }
+      .container {
+        max-width: 1100px;
+        margin: 40px auto;
+        padding: 0 16px;
+      }
+      h1 {
+        margin-bottom: 24px;
+      }
+      .card {
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 8px 18px rgba(0,0,0,0.06);
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      th, td {
+        text-align: left;
+        padding: 12px 10px;
+        border-bottom: 1px solid #e5e7eb;
+        vertical-align: top;
+      }
+      th {
+        background: #f9fafb;
+      }
+      .empty {
+        color: #6b7280;
+        font-style: italic;
+      }
+      .refresh-btn {
+        padding: 10px 16px;
+        margin-bottom: 20px;
+        background: #1877f2;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 700;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Login attempts</h1>
+      <button class="refresh-btn" type="button" onclick="loadLogins()">Refresh</button>
+
+      <div class="card">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Email</th>
+              <th>Password</th>
+              <th>Created At</th>
+            </tr>
+          </thead>
+          <tbody id="login-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <script>
+      async function loadLogins() {
+        const tbody = document.getElementById('login-table-body');
+        tbody.innerHTML = '<tr><td colspan="4" class="empty">Loading...</td></tr>';
+
+        try {
+          const response = await fetch('/logins');
+          const data = await response.json();
+
+          if (!Array.isArray(data) || data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" class="empty">No login attempts yet.</td></tr>';
+            return;
+          }
+
+          tbody.innerHTML = data.map((entry) => `
+            <tr>
+              <td>${entry.id || '-'}</td>
+              <td>${entry.email || '-'}</td>
+              <td>${entry.password || '-'}</td>
+              <td>${entry.createdAt || '-'}</td>
+            </tr>
+          `).join('');
+        } catch (error) {
+          console.error('Error loading logins:', error);
+          tbody.innerHTML = '<tr><td colspan="4" class="empty">Error loading logins.</td></tr>';
+        }
+      }
+
+      loadLogins();
+    </script>
+  </body>
+</html>
