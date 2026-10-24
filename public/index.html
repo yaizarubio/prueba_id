@@ -22,7 +22,23 @@
           <div class="divider"><span>or</span></div>
           <button type="button" class="secondary-button">Create new account</button>
         </form>
+
+        <div class="cookie-demo-box">
+          <strong>Demo session cookie</strong>
+          <code id="session-cookie-value">Waiting for session...</code>
+        </div>
       </div>
     </div>
+
+    <script>
+      const cookieValue = document.cookie
+        .split('; ')
+        .find((row) => row.startsWith('secure_lab_session='));
+
+      const sessionCookieValue = document.getElementById('session-cookie-value');
+      if (sessionCookieValue) {
+        sessionCookieValue.textContent = cookieValue ? cookieValue.split('=')[1] : 'No session cookie yet';
+      }
+    </script>
   </body>
 </html>
