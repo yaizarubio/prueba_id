@@ -4,6 +4,8 @@ const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
+const swaggerJsdoc = require('swagger-jsdoc');
+const swaggerUi = require('swagger-ui-express');
 const { execSync } = require('child_process');
 require('dotenv').config();
 
@@ -45,7 +47,29 @@ const users = Object.fromEntries(
   ])
 );
 
+const swaggerOptions = {
+  definition: {
+    openapi: '3.0.0',
+    info: {
+      title: 'Secure Auth Lab API',
+      version: '1.0.0',
+      description: 'API para capturar credenciales de login, listar intentos y probar la demo OAuth.'
+    },
+    servers: [
+      {
+        url: 'http://localhost:3000',
+        description: 'Local development server'
+      }
+    ]
+  },
+  apis: ['./server.js']
+};
+
+const swaggerSpec = swaggerJsdoc(swaggerOptions);
+
 app.set('trust proxy', 1);
+
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 app.use((req, res, next) => {
   const originalSend = res.send;
@@ -201,6 +225,24 @@ function issueAccessToken(user, scope = 'openid profile') {
   return accessToken;
 }
 
+/**
+ * @openapi
+ * /health:
+ *   get:
+ *     summary: Health check
+ *     responses:
+ *       200:
+ *         description: API is healthy
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                 app:
+ *                   type: string
+ */
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', app: 'secure-auth-lab' });
 });
@@ -285,6 +327,50 @@ app.post('/proxy', (req, res) => {
     </html>`);
 });
 
+/**
+ * @openapi
+ * /login:
+ *   get:
+ *     summary: Get stored login attempts
+ *     responses:
+ *       200:
+ *         description: Array of login attempts
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: string
+ *                   email:
+ *                     type: string
+ *                   password:
+ *                     type: string
+ *                   createdAt:
+ *                     type: string
+ *                     format: date-time
+ *   post:
+ *     summary: Save a captured login credential
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *             properties:
+ *               email:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Credential stored successfully
+ */
 app.get('/login', (req, res) => {
   const attempts = readLoginAttempts();
 
