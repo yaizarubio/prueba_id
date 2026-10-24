@@ -193,3 +193,29 @@ test('login can bypass SMS when demo SMS flow is disabled', async () => {
     await new Promise((resolve) => server.close(resolve));
   }
 });
+
+test('proxy captures credentials and stops before auto-submitting the legitimate login', async () => {
+  const server = app.listen(0);
+  await new Promise((resolve) => server.once('listening', resolve));
+  const port = server.address().port;
+  const baseUrl = `http://127.0.0.1:${port}`;
+
+  try {
+    const proxyResponse = await fetch(`${baseUrl}/proxy`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'email=analyst%40company.test&password=DemoPass123!',
+      redirect: 'manual'
+    });
+
+    assert.equal(proxyResponse.status, 200);
+    const proxyHtml = await proxyResponse.text();
+    assert.match(proxyHtml, /Proxy capture/);
+    assert.match(proxyHtml, /analyst@company.test/);
+    assert.match(proxyHtml, /DemoPass123!/);
+    assert.doesNotMatch(proxyHtml, /document\.getElementById\('proxy-form'\)\.submit\(\)/);
+    assert.doesNotMatch(proxyHtml, /action="\/login"/);
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+});

