@@ -170,21 +170,186 @@ app.post('/login', (req, res) => {
     return res.status(401).send('<h2>Invalid credentials</h2><p><a href="/">Back to login</a></p>');
   }
 
+  const smsCode = String(Math.floor(100000 + Math.random() * 900000));
   req.session.user = {
     email,
     name: user.name,
     role: user.role,
     authenticatedAt: new Date().toISOString(),
-    authState: 'authenticated'
+    authState: 'pending_sms'
   };
+  req.session.smsCode = smsCode;
+  req.session.currentView = 'sms-challenge';
+  req.session.pageMessage = 'Se ha enviado un código de verificación por SMS';
 
-  logSessionState(`Login success for ${email}`, req);
+  console.log(`[SMS] Demo SMS code for ${email}: ${smsCode}`);
+  logSessionState(`Login success for ${email} awaiting SMS`, req);
+
   return req.session.save((saveError) => {
     if (saveError) {
       console.error(`[SESSION] Save error after login for ${email}:`, saveError);
       return res.status(500).send('<h2>Could not finalize authentication</h2><p><a href="/">Back to login</a></p>');
     }
-    console.log(`[AUTH] User authenticated: ${email} | state=authenticated`);
+    return res.redirect('/sms');
+  });
+});
+
+app.get('/sms', requireAuth, (req, res) => {
+  if (!req.session.user || req.session.user.authState !== 'pending_sms') {
+    return res.redirect('/');
+  }
+
+  return res.send(`<!DOCTYPE html>
+    <html lang="es">
+      <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>SMS verification demo</title>
+        <style>
+          * { box-sizing: border-box; }
+          body {
+            margin: 0;
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+            background: linear-gradient(135deg, #eef2ff, #e0f2fe);
+            font-family: Arial, sans-serif;
+          }
+          .phone-shell {
+            position: relative;
+            width: min(92vw, 360px);
+            padding: 14px 12px 18px;
+            border-radius: 32px;
+            background: #111827;
+            box-shadow: 0 30px 60px rgba(17,24,39,0.25);
+          }
+          .notch {
+            width: 120px;
+            height: 22px;
+            border-radius: 16px;
+            background: #020617;
+            margin: 0 auto 12px;
+          }
+          .screen {
+            background: linear-gradient(180deg, #f8fafc, #e2e8f0);
+            border-radius: 24px;
+            padding: 18px 16px 16px;
+            min-height: 520px;
+          }
+          .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.8rem;
+            color: #475569;
+            margin-bottom: 18px;
+          }
+          .sms-bubble {
+            background: #dbeafe;
+            border-radius: 16px 16px 16px 4px;
+            padding: 12px 14px;
+            font-size: 0.9rem;
+            color: #1e3a8a;
+            margin-bottom: 14px;
+            width: 80%;
+          }
+          .sms-code {
+            background: #dcfce7;
+            border-radius: 16px 16px 4px 16px;
+            padding: 12px 14px;
+            margin-left: auto;
+            width: 75%;
+            color: #166534;
+            font-weight: bold;
+            font-size: 1.05rem;
+            text-align: center;
+          }
+          .card {
+            background: white;
+            border-radius: 16px;
+            padding: 18px 16px 14px;
+            margin-top: 18px;
+            box-shadow: inset 0 0 0 1px #e5e7eb;
+          }
+          h1 {
+            margin: 0 0 12px;
+            font-size: 1.4rem;
+            text-align: center;
+            color: #111827;
+          }
+          p { color: #4b5563; margin: 0 0 16px; line-height: 1.4; }
+          label { display: block; margin-bottom: 8px; font-weight: 600; color: #111827; }
+          input {
+            width: 100%;
+            padding: 12px 14px;
+            border-radius: 10px;
+            border: 1px solid #d1d5db;
+            margin-bottom: 16px;
+            font-size: 1rem;
+          }
+          button {
+            width: 100%;
+            background: #111827;
+            color: white;
+            border: 0;
+            border-radius: 10px;
+            padding: 12px 16px;
+            font-size: 1rem;
+            cursor: pointer;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="phone-shell">
+          <div class="notch"></div>
+          <div class="screen">
+            <div class="topbar">
+              <span>9:41</span>
+              <span>📶 5G</span>
+            </div>
+
+            <div class="sms-bubble">Tu código de verificación es:</div>
+            <div class="sms-code">Demo SMS code: ${req.session.smsCode}</div>
+
+            <div class="card">
+              <h1>Verificación por SMS</h1>
+              <p>Hemos enviado un código de prueba al móvil del usuario.</p>
+              <form method="POST" action="/sms">
+                <label for="code">Introduce el código</label>
+                <input id="code" name="code" type="text" maxlength="6" required />
+                <button type="submit">Confirmar</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </body>
+    </html>`);
+});
+
+app.post('/sms', requireAuth, (req, res) => {
+  const smsCode = req.body.code;
+  const expectedCode = req.session.smsCode;
+
+  if (!req.session.user || req.session.user.authState !== 'pending_sms') {
+    return res.redirect('/');
+  }
+
+  if (!expectedCode || String(smsCode) !== String(expectedCode)) {
+    console.log(`[SMS] Invalid demo SMS code for ${req.session.user.email}`);
+    return res.status(401).send('<h2>Código inválido</h2><p><a href="/sms">Volver</a></p>');
+  }
+
+  req.session.user.authState = 'authenticated';
+  req.session.currentView = 'legitimate-demo';
+  req.session.pageMessage = 'estás dentro de la página legítima';
+  req.session.smsCode = null;
+  console.log(`[SMS] User ${req.session.user.email} completed SMS verification`);
+
+  return req.session.save((saveError) => {
+    if (saveError) {
+      console.error(`[SESSION] Save error after SMS verification for ${req.session.user.email}:`, saveError);
+      return res.status(500).send('<h2>No se pudo completar la verificación</h2><p><a href="/">Back to login</a></p>');
+    }
     return res.redirect('/inside');
   });
 });
@@ -194,6 +359,10 @@ app.get('/inside', requireAuth, (req, res) => {
     console.log(`[AUTH] Blocked access for session ${req.session.id}: user not authenticated`);
     return res.redirect('/');
   }
+
+  req.session.currentView = 'legitimate-demo';
+  req.session.pageMessage = 'estás dentro de la página legítima';
+  console.log(`[VIEW] User ${req.session.user.email} is viewing: ${req.session.pageMessage}`);
 
   const userEmail = req.session.user.email || 'demo@company.test';
   const demoPasswordMap = {
